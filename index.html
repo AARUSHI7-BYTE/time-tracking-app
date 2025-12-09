@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>AI-Powered Daily Time Tracking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-logo">24h</div>
+        <div>
+          <h1 class="brand-title">AI TimeScope</h1>
+          <p class="brand-subtitle">Visualize your day, minute by minute.</p>
+        </div>
+      </div>
+
+      <div id="nav-auth" class="nav-auth">
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="container main-inner">
+
+      <section id="view-landing" class="view fade-in">
+        <div class="landing-grid">
+          <div class="landing-text">
+            <div class="badge">
+              <span class="badge-dot"></span>
+              AI-powered daily time analytics
+            </div>
+
+            <h2 class="landing-title">
+              Track your <span class="accent-cyan">24 hours</span>, unlock better
+              <span class="accent-violet">clarity</span>.
+            </h2>
+
+            <p class="landing-description">
+              Log how you spend every minute of your day and instantly see a
+              beautiful breakdown of your time. Powered by Firebase and AI-assisted
+              design, built for focus, reflection, and improvement.
+            </p>
+
+            <ul class="feature-list">
+              <li><span class="bullet">✓</span> Log activities with categories and minutes</li>
+              <li><span class="bullet">✓</span> Day-based analytics with charts</li>
+              <li><span class="bullet">✓</span> “No data available” state with friendly CTA</li>
+            </ul>
+
+            <div class="landing-actions">
+              <button id="btn-google-login" class="btn btn-primary">
+                ⚡ Continue with Google
+              </button>
+              <p class="small-muted">
+                Authentication powered by Firebase. Only logged-in users can access the dashboard.
+              </p>
+            </div>
+          </div>
+
+          <div class="landing-card">
+            <div class="card-header">
+              <span>Today’s Snapshot</span>
+              <span class="badge-soft">AI Layout Drafted</span>
+            </div>
+
+            <div class="card-body">
+              <div class="snapshot">
+                <div class="snapshot-circle">24h</div>
+                <div class="snapshot-bars">
+                  <div class="snapshot-row">
+                    <span>Work</span><span>7h 30m</span>
+                  </div>
+                  <div class="snapshot-bar">
+                    <div style="width: 60%;"></div>
+                  </div>
+
+                  <div class="snapshot-row">
+                    <span>Sleep</span><span>7h 0m</span>
+                  </div>
+                  <div class="snapshot-bar">
+                    <div style="width: 40%; background: #a855f7;"></div>
+                  </div>
+
+                  <div class="snapshot-row">
+                    <span>Study</span><span>3h 0m</span>
+                  </div>
+                  <div class="snapshot-bar">
+                    <div style="width: 35%; background: #22c55e;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <p class="small-muted">
+                This hero section design was AI-assisted (ChatGPT / similar) as part of the project
+                requirement.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-app" class="view hidden fade-in">
+
+        <div class="top-bar">
+          <div class="date-picker-group">
+            <label for="input-date">Select date</label>
+            <input id="input-date" type="date" />
+          </div>
+
+          <div class="summary-pill">
+            <div>
+              <span class="muted">Logged today:</span>
+              <span id="text-total-minutes" class="highlight">0 minutes</span>
+            </div>
+            <div class="divider"></div>
+            <div>
+              <span class="muted">Remaining:</span>
+              <span id="text-remaining-minutes" class="highlight">1440 minutes</span>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="content-grid">
+          <div class="card">
+            <div class="card-header between">
+              <h3>Log your activities</h3>
+              <span class="badge-soft">Max 24 hours / 1440 mins</span>
+            </div>
+
+            <form id="form-activity" class="activity-form">
+              <div class="form-grid">
+                <div class="form-field">
+                  <label for="input-activity-name">Activity name</label>
+                  <input id="input-activity-name" type="text" required placeholder="Deep work, Gym, Netflix..." />
+                </div>
+
+                <div class="form-field">
+                  <label for="select-category">Category</label>
+                  <select id="select-category">
+                    <option value="Work">Work</option>
+                    <option value="Study">Study</option>
+                    <option value="Sleep">Sleep</option>
+                    <option value="Exercise">Exercise</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Personal">Personal</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label for="input-duration">Duration (minutes)</label>
+                  <input id="input-duration" type="number" min="1" max="1440" required placeholder="e.g. 90" />
+                </div>
+              </div>
+
+              <div class="form-footer">
+                <p id="text-form-error" class="form-error hidden"></p>
+                <div class="form-actions">
+                  <button type="button" id="btn-cancel-edit" class="btn btn-secondary small hidden">
+                    Cancel edit
+                  </button>
+                  <button type="submit" id="btn-save-activity" class="btn btn-primary small">
+                    <span id="btn-save-activity-icon">＋</span>
+                    <span id="btn-save-activity-text">Add activity</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <div class="activity-list">
+              <div class="activity-list-header">
+                <span class="muted">Activities for selected date</span>
+                <span id="text-activity-count" class="muted">0 activities</span>
+              </div>
+
+              <div class="activity-table-wrapper">
+                <table class="activity-table">
+                  <thead>
+                    <tr>
+                      <th>Activity</th>
+                      <th>Category</th>
+                      <th class="right">Minutes</th>
+                      <th class="right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-activities">
+                    <!-- Filled by JS -->
+                  </tbody>
+                </table>
+                <div id="empty-activities" class="empty-state">
+                  No activities logged for this date yet.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Dashboard -->
+          <div class="card">
+            <div class="card-header between">
+              <h3>Daily analytics</h3>
+              <button id="btn-analyse" class="btn btn-accent small" disabled>
+                📊 Analyse day
+              </button>
+            </div>
+
+            <!-- Summary -->
+            <div id="dashboard-summary" class="dashboard-summary hidden">
+              <p>Total time: <span id="dash-total-time" class="highlight">0h 0m</span></p>
+              <p>Number of activities: <span id="dash-activity-count" class="highlight">0</span></p>
+              <p>Categories used: <span id="dash-category-count" class="highlight">0</span></p>
+            </div>
+
+            <!-- No data view -->
+            <div id="dashboard-no-data" class="dashboard-empty">
+              <div class="empty-icon">🕳️</div>
+              <p class="empty-title">No data available for this date</p>
+              <p class="empty-text">
+                Start logging your day to see a beautiful breakdown of where your time goes.
+              </p>
+            </div>
+
+            <!-- Charts -->
+            <div id="dashboard-charts" class="dashboard-charts hidden">
+              <div class="chart-card">
+                <p class="muted">Time spent per category</p>
+                <canvas id="chart-pie" height="160"></canvas>
+              </div>
+
+              <div class="chart-card">
+                <p class="muted">Activities duration</p>
+                <canvas id="chart-bar" height="160"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <div class="container footer-inner">
+      <span>Built with Firebase • Designed with AI assistance</span>
+      <span>24h Time Tracking & Analytics Dashboard</span>
+    </div>
+  </footer>
+
+  <!-- Main logic -->
+  <script src="main.js"></script>
+</body>
+
+</html>
+
